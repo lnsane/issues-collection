@@ -86,6 +86,8 @@ filter {
 
 ```
 
+filter grok 调试 https://grokdebug.herokuapp.com/
+
 ```logstash
 input {
     beats {
