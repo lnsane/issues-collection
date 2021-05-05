@@ -86,26 +86,58 @@ filter {
 
 ```
 
-```shell
-filter {
-  grok {
-    match => {
-      "[log][file][path]" => "/%{GREEDYDATA}/%{GREEDYDATA}/%{GREEDYDATA:filename}\.log"
+```logstash
+input {
+    beats {
+        port => 5044
+        type => "erp"
     }
-    match => {message => "(?<date>\d+\-\d+\-\d+ \d+\:\d+\:\d+\,\d+) \-(?<level>\w+)" }
-  }
+    beats {
+        port => 5043
+        type => "mysql"
+    }
+}
+filter {
+    if[type] == "erp" {
+        grok {
+            match => {
+                "[log][file][path]" => "%{GREEDYDATA}/%{GREEDYDATA:filename}\.log"
+            }
+            match => {"message" => "(?<date>\d+\-\d+\-\d+ \d+\:\d+\:\d+\,\d+).*.+(?=[A-z])(?<level>\DEBUG|INFO|WARRING|ERROR).*(?<class>(?<=]).*.+(?=->)).*.+(?<=->)(?<logmessage>.*)" }
+            add_field => { "resultmessage" => "%{logmessage}" }
+            break_on_match => false
+        }
+        grok {
+            match => {
+                "message" => ".*.+(?<=Consume Time：)(?<millisecond>.+(?= ms)) ms (?<dateTime>\d+\-\d+\-\d+ \d+\:\d+\:\d+).*Execute SQL：(?<SQL>.*)"
+            }
+        }
+        mutate {
+            gsub => ["resultmessage", "\n", "::",
+                "resultmessage","\tat",""]
+        }
+        mutate {
+            split => {"resultmessage" => "::" }
+        }
+        mutate {
+            convert => { "millisecond" => "integer" }
+        }
+    }
 }
 
-filter {
-  grok {
-    match => {
-      "path" => "/%{GREEDYDATA}/%{GREEDYDATA}/%{GREEDYDATA:filename}\.log"
+output {
+    stdout { codec => rubydebug }
+    if[type] == "erp" {
+        elasticsearch {
+            hosts => ["http://localhost:9200"]
+            index => "erp-log"
+        }
     }
-    match => {message => "(?<date>\d+\-\d+\-\d+ \d+\:\d+\:\d+\,\d+) \-(?<level>\w+)" }
-    break_on_match => false
-  }
+    if[type] == "mysql" {
+        elasticsearch {
+            hosts => ["http://localhost:9200"]
+            index => "%{[@metadata][beat]}-%{[@metadata][version]}-erp-mysql"
+        }
+    }
 }
-
-
-
 ```
