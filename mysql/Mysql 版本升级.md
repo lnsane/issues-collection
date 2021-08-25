@@ -9,8 +9,7 @@
 升级依赖
 
 ```shell
-yum install mysql*8.0.11* 
---setopt=protected_multilib=false
+yum install mysql-community-*8.0.11*
 ```
 
 ## 更新数据库错误信息
