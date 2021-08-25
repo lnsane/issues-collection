@@ -15,7 +15,7 @@ yum install mysql-community-*8.0.11*
 ## 更新数据库错误信息
 
 ```shell
- mysql_upgrade -u root -p 123456
+ mysql_upgrade -u root -p MyNewPass4!
 ```
 
 ```shell
