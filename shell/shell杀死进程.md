@@ -92,3 +92,5 @@ ps -ef | grep 'init' | grep -v grep | awk '{print $2}' | xargs kill -s SIGINT
     kill -s SIGINT 1
     kill -s SIGINT 8
   ```
+  
+
